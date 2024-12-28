@@ -5,6 +5,7 @@ import com.example.auth.domain.member.member.service.MemberService;
 import com.example.auth.domain.post.post.dto.PostDto;
 import com.example.auth.domain.post.post.entity.Post;
 import com.example.auth.domain.post.post.service.PostService;
+import com.example.auth.global.exceptions.ServiceException;
 import com.example.auth.global.rsData.RsData;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -94,31 +95,29 @@ public class ApiV1PostController {
             @Length(min = 2)
             String content,
             @NotNull
-            Long authorId
-    ) {
-    }
+            Long authorId,
+            @NotNull
+            @Length(min = 4)
+            String password
+    ){
 
-    record PostWriteResBody(
-            PostDto item,
-            long totalCount
-    ) {
     }
 
     @PostMapping
-    public RsData<PostWriteResBody> writeItem(
+    public RsData<PostDto> writeItem(
             @RequestBody @Valid PostWriteReqBody reqBody
     ) {
         Member actor = memberService.findById(reqBody.authorId).get();
+
+        if (!actor.getPassword().equals(reqBody.password))
+            throw new ServiceException("401-1", "비밀번호가 일치하지 않습니다.");
 
         Post post = postService.write(actor, reqBody.title, reqBody.content);
 
         return new RsData<>(
                 "201-1",
                 "%d번 글이 작성되었습니다.".formatted(post.getId()),
-                new PostWriteResBody(
-                        new PostDto(post),
-                        postService.count()
-                )
+                new PostDto(post)
         );
     }
 }
