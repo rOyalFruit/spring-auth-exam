@@ -8,12 +8,11 @@ import com.example.auth.domain.post.post.service.PostService;
 import com.example.auth.global.exceptions.ServiceException;
 import com.example.auth.global.rq.Rq;
 import com.example.auth.global.rsData.RsData;
+import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.validator.constraints.Length;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,9 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ApiV1PostCommentController {
 
-    @Autowired
-    @Lazy
-    private ApiV1PostCommentController self;
+    private final EntityManager em;
     private final Rq rq;
     private final PostService postService;
 
@@ -66,30 +63,27 @@ public class ApiV1PostCommentController {
             String content
     ) {
     }
+
     @PostMapping
+    @Transactional
     public RsData<Void> writeItem(
             @PathVariable long postId,
             @RequestBody @Valid PostCommentWriteReqBody reqBody
-    ) {
-        PostComment postComment = self._writeItem(postId, reqBody);
-        return new RsData<>(
-                "201-1",
-                "%d번 댓글이 작성되었습니다.".formatted(postComment.getId())
-        );
-    }
-
-    @Transactional
-    public PostComment _writeItem(
-            long postId,
-            PostCommentWriteReqBody reqBody
     ) {
         Member actor = rq.checkAuthentication();
         Post post = postService.findById(postId).orElseThrow(
                 () -> new ServiceException("404-1", "%d번 글은 존재하지 않습니다.".formatted(postId))
         );
-        return post.addComment(
+        PostComment postComment = post.addComment(
                 actor,
                 reqBody.content
+        );
+
+        em.flush();
+
+        return new RsData<>(
+                "201-1",
+                "%d번 댓글이 작성되었습니다.".formatted(postComment.getId())
         );
     }
 }
