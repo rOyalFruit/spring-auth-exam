@@ -29,13 +29,15 @@ public class Post extends BaseTime {
     @OneToMany(mappedBy = "post", cascade = {CascadeType.PERSIST, CascadeType.REMOVE}, orphanRemoval = true)
     @Builder.Default
     private List<PostComment> comments = new ArrayList<>();
-    public void addComment(Member author, String content) {
+    public PostComment addComment(Member author, String content) {
         PostComment comment = PostComment.builder()
                 .post(this)
                 .author(author)
                 .content(content)
                 .build();
         comments.add(comment);
+
+        return comment;
     }
 
     public List<PostComment> getCommentsByOrderByIdDesc() {
