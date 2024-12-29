@@ -8,7 +8,6 @@ import com.example.auth.domain.post.post.service.PostService;
 import com.example.auth.global.exceptions.ServiceException;
 import com.example.auth.global.rq.Rq;
 import com.example.auth.global.rsData.RsData;
-import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ApiV1PostCommentController {
 
-    private final EntityManager em;
     private final Rq rq;
     private final PostService postService;
 
@@ -79,7 +77,7 @@ public class ApiV1PostCommentController {
                 reqBody.content
         );
 
-        em.flush();
+        postService.flush();
 
         return new RsData<>(
                 "201-1",
