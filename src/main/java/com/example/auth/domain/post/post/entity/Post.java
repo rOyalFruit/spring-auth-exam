@@ -1,12 +1,13 @@
 package com.example.auth.domain.post.post.entity;
 
 import com.example.auth.domain.member.member.entity.Member;
+import com.example.auth.domain.post.comment.entity.PostComment;
 import com.example.auth.global.jpa.entity.BaseTime;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -23,4 +24,16 @@ public class Post extends BaseTime {
 
     @Column(columnDefinition = "TEXT")
     private String content;
+
+    @OneToMany(mappedBy = "post", cascade = {CascadeType.PERSIST, CascadeType.REMOVE}, orphanRemoval = true)
+    @Builder.Default
+    private List<PostComment> comments = new ArrayList<>();
+    public void addComment(Member author, String content) {
+        PostComment comment = PostComment.builder()
+                .post(this)
+                .author(author)
+                .content(content)
+                .build();
+        comments.add(comment);
+    }
 }
