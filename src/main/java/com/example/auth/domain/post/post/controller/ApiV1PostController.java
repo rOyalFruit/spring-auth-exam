@@ -7,6 +7,7 @@ import com.example.auth.domain.post.post.entity.Post;
 import com.example.auth.domain.post.post.service.PostService;
 import com.example.auth.global.exceptions.ServiceException;
 import com.example.auth.global.rsData.RsData;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -15,23 +16,23 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/posts")
 @RequiredArgsConstructor
 public class ApiV1PostController {
-    private final PostService postService;
-    private final MemberService memberService;
 
-    private Member checkAuthentication(String credentials) {
-        credentials = credentials.substring("Bearer ".length()); // 관례상 Authorization 헤더값 앞에 Bearer 를 붙임
-        String[] credentialsBits = credentials.split("/", 2);
-        long actorId = Long.parseLong(credentialsBits[0]);
-        String actorPassword = credentialsBits[1];
-        Member actor = memberService.findById(actorId).get();
-        if (!actor.getPassword().equals(actorPassword))
+    private final PostService postService;      // 싱글톤
+    private final MemberService memberService;  // 싱글톤
+    private final HttpServletRequest request;   // Request Scope Bean
+    private Member checkAuthentication() {
+        String credentials = request.getHeader("Authorization");
+        String apiKey = credentials.substring("Bearer ".length());
+        Optional<Member> opActor = memberService.findByApiKey(apiKey);
+        if (opActor.isEmpty())
             throw new ServiceException("401-1", "비밀번호가 일치하지 않습니다.");
-        return actor;
+        return opActor.get();
     }
 
     @GetMapping
@@ -56,10 +57,9 @@ public class ApiV1PostController {
 
     @DeleteMapping("/{id}")
     public RsData<Void> deleteItem(
-            @PathVariable long id,
-            @RequestHeader("Authorization") String credentials  // 관례상 Authorization 이라는 헤더명 사용
+            @PathVariable long id
     ) {
-        Member actor = checkAuthentication(credentials);
+        Member actor = checkAuthentication();
 
         Post post = postService.findById(id).get();
 
@@ -89,10 +89,9 @@ public class ApiV1PostController {
     @Transactional
     public RsData<PostDto> modifyItem(
             @PathVariable long id,
-            @RequestBody @Valid PostModifyReqBody reqBody,
-            @RequestHeader("Authorization") String credentials  // 관례상 Authorization 이라는 헤더명 사용
+            @RequestBody @Valid PostModifyReqBody reqBody
     ) {
-        Member actor = checkAuthentication(credentials);
+        Member actor = checkAuthentication();
 
         Post post = postService.findById(id).get();
 
@@ -122,10 +121,9 @@ public class ApiV1PostController {
 
     @PostMapping
     public RsData<PostDto> writeItem(
-            @RequestBody @Valid PostWriteReqBody reqBody,
-            @RequestHeader("Authorization") String credentials  // 관례상 Authorization 이라는 헤더명 사용
+            @RequestBody @Valid PostModifyReqBody reqBody
     ) {
-        Member actor = checkAuthentication(credentials);
+        Member actor = checkAuthentication();
 
         Post post = postService.write(actor, reqBody.title, reqBody.content);
 
