@@ -11,7 +11,6 @@ import lombok.*;
 
 @Entity
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,4 +21,8 @@ public class PostComment extends BaseTime {
     private Member author;
     @Column(columnDefinition = "TEXT")
     private String content;
+
+    public void modify(String content) {
+        this.content = content;
+    }
 }
